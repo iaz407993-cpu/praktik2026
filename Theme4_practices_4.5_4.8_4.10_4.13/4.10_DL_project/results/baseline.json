@@ -1,0 +1,6 @@
+{
+  "model": "LogisticRegression",
+  "C": 10.0,
+  "train_macro_f1": 0.9991,
+  "val_macro_f1": 0.9751
+}

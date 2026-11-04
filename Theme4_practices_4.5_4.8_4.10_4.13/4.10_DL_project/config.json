@@ -1,0 +1,14 @@
+{
+  "project": "digits-cnn: класифікація рукописних цифр 8x8 (Варіант 1 — Image classification)",
+  "seed": 42,
+  "split": {"test_size": 0.2, "val_size": 0.2, "stratify": true},
+  "baseline": {"model": "LogisticRegression", "C_grid": [0.01, 0.1, 1.0, 10.0], "max_iter": 5000},
+  "training": {"epochs": 150, "batch_size": 32, "learning_rate": 0.001, "early_stopping_patience": 15},
+  "runs": {
+    "D1": {"filters": [32, 64], "dense": 64, "dropout": 0.0, "l2": 0.0,    "augment": false},
+    "D2": {"filters": [32, 64], "dense": 64, "dropout": 0.3, "l2": 0.0001, "augment": false},
+    "D3": {"filters": [32, 64], "dense": 64, "dropout": 0.3, "l2": 0.0001, "augment": true}
+  },
+  "augmentation": {"translation": 0.125, "rotation": 0.04},
+  "domain_shift": {"noise_sigma": 0.15, "shift_pixels": 1}
+}

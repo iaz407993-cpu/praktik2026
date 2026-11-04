@@ -1,0 +1,3 @@
+Model,test macro-F1 clean,test acc clean,test macro-F1 noise,test acc noise,test macro-F1 shift,test acc shift
+B0 LogReg,0.9579,0.9583,0.9384,0.9389,0.3409,0.3472
+FINAL (D3),0.9521,0.9528,0.9381,0.9389,0.9075,0.9083
