@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дашборд військового аналітика</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">Збройні Сили України</div>
+        <ul class="nav-menu">
+            <li><a href="#kpi">Головна</a></li>
+            <li><a href="#charts">Аналітика</a></li>
+            <li><a href="#table">Звіти</a></li>
+            <li><a href="#footer">Контакти</a></li>
+        </ul>
+    </nav>
+
+    <header class="header">
+        <h1>Дашборд військового аналітика</h1>
+        <p class="subtitle">Особовий склад навчальних груп: категоріальні, структурні, часові, просторові та табличні дані</p>
+    </header>
+
+    <main class="container">
+        <!-- Панель фільтра: зміна групи оновлює всі блоки -->
+        <section class="toolbar">
+            <label for="group-filter">Група:</label>
+            <select id="group-filter">
+                <option value="all">Усі групи</option>
+            </select>
+            <span class="hint">Клік по стовпчику графіка або маркеру на карті теж обирає групу</span>
+        </section>
+
+        <!-- Інформаційні картки (KPI) -->
+        <section id="kpi" class="kpi-row"></section>
+
+        <div id="charts" class="flex-container">
+            <div class="graph-block">
+                <h2>1. Чисельність за групами</h2>
+                <p class="data-type">Категоріальні дані → стовпчикова діаграма</p>
+                <div class="chart-box"><canvas id="chart-groups"></canvas></div>
+                <p class="insight" id="insight-groups"></p>
+            </div>
+            <div class="graph-block">
+                <h2>2. Структура за військовими званнями</h2>
+                <p class="data-type">Частка від цілого → кільцева діаграма</p>
+                <div class="chart-box"><canvas id="chart-ranks"></canvas></div>
+                <p class="insight" id="insight-ranks"></p>
+            </div>
+            <div class="graph-block">
+                <h2>3. Розподіл за роком народження</h2>
+                <p class="data-type">Часові дані → лінійний графік з накопиченням</p>
+                <div class="chart-box"><canvas id="chart-years"></canvas></div>
+                <p class="insight" id="insight-years"></p>
+            </div>
+            <div class="graph-block">
+                <h2>4. Розташування груп</h2>
+                <p class="data-type">Просторові дані → карта (розмір кола = чисельність)</p>
+                <div id="map" class="map-box"></div>
+                <p class="insight" id="insight-map"></p>
+            </div>
+        </div>
+
+        <!-- Табличні дані -->
+        <section id="table" class="table-block">
+            <h2>5. Особовий склад <span id="table-count"></span></h2>
+            <p class="data-type">Табличні дані → таблиця з сортуванням (клік по заголовку) і пошуком</p>
+            <input id="search" type="search" placeholder="Пошук за прізвищем або званням…">
+            <div class="table-wrap">
+                <table id="student-table">
+                    <thead>
+                        <tr>
+                            <th data-key="full_name">Повне ім'я</th>
+                            <th data-key="birth_date">Дата народження</th>
+                            <th data-key="age">Вік</th>
+                            <th data-key="rank">Звання</th>
+                            <th data-key="group">Група</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer id="footer" class="footer">
+        © 2025 Збройні Сили України · навчальні дані (mock.js)
+    </footer>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <!-- Leaflet.js CDN -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

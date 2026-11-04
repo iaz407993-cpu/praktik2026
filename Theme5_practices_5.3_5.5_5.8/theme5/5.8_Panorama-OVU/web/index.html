@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панорама-ОВУ</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">◈</span>
+      <div>
+        <div class="brand-name">Панорама-ОВУ</div>
+        <div class="brand-sub">міні-ІАС панорамного огляду обстановки · навчальні дані</div>
+      </div>
+    </div>
+    <nav class="views" aria-label="Режим аудиторії">
+      <a data-view="executive" href="?view=executive">Executive</a>
+      <a data-view="analyst" href="?view=analyst">Analyst</a>
+      <a data-view="demo" href="?view=demo">Demo / Public</a>
+    </nav>
+  </header>
+
+  <div id="public-banner" class="banner" hidden>Режим DEMO / PUBLIC: чутливі поля (джерело) не запитуються з API і не відображаються.</div>
+  <div id="error-banner" class="banner banner-error" hidden></div>
+
+  <main class="wrap">
+    <!-- Фільтри -->
+    <section class="card filters">
+      <div class="presets" role="group" aria-label="Швидкий період">
+        <span class="label">Період:</span>
+        <button type="button" data-days="7">7 днів</button>
+        <button type="button" data-days="14">14 днів</button>
+        <button type="button" data-days="30">30 днів</button>
+        <button type="button" data-days="90">90 днів</button>
+      </div>
+      <form id="filter-form" class="filter-grid">
+        <label>З <input type="date" name="from"></label>
+        <label>По <input type="date" name="to"></label>
+        <label>Сектор <select name="sector"><option value="">усі</option></select></label>
+        <label>Напрямок <select name="direction"><option value="">усі</option></select></label>
+        <label>Тип події <select name="event_type"><option value="">усі</option></select></label>
+        <label>Мін. інтенсивність <input type="number" name="min_intensity" min="1" max="50" placeholder="1–50"></label>
+        <div class="filter-actions">
+          <button type="submit" class="primary">Apply</button>
+          <button type="button" id="reset-btn">Скинути</button>
+        </div>
+      </form>
+      <div id="period-note" class="period-note"></div>
+    </section>
+
+    <!-- KPI -->
+    <section id="kpi" class="kpi-grid" data-block="kpi"></section>
+
+    <!-- Інсайт -->
+    <section class="card insight" data-block="insight">
+      <h2>Інсайт</h2>
+      <ul id="insight-list"></ul>
+    </section>
+
+    <!-- Тренд -->
+    <section class="card" data-block="trend">
+      <div class="card-head">
+        <h2>Динаміка подій: цей період vs попередній</h2>
+        <div class="seg" role="group" aria-label="Групування">
+          <button type="button" data-group="day" class="active">День</button>
+          <button type="button" data-group="week">Тиждень</button>
+        </div>
+      </div>
+      <div class="chart-lg"><canvas id="trend-chart"></canvas></div>
+    </section>
+
+    <!-- Розподіли -->
+    <div class="grid-2" data-block="distributions">
+      <section class="card">
+        <h2>Розподіл за напрямками</h2>
+        <div class="chart-md"><canvas id="dir-chart"></canvas></div>
+      </section>
+      <section class="card">
+        <h2>Розподіл за типами подій</h2>
+        <div class="chart-md"><canvas id="type-chart"></canvas></div>
+      </section>
+    </div>
+
+    <!-- Панорама: кілька зрізів одночасно -->
+    <section class="card" data-block="panorama">
+      <h2>Панорама зрізів: цей період vs попередній</h2>
+      <p class="muted" id="panorama-note"></p>
+      <div class="panorama-grid" id="panorama"></div>
+    </section>
+
+    <!-- Heatmap -->
+    <section class="card" data-block="heatmap">
+      <div class="card-head">
+        <h2>Heatmap: сектор × тиждень</h2>
+        <div class="seg" role="group" aria-label="Метрика">
+          <button type="button" data-metric="count" class="active">Кількість</button>
+          <button type="button" data-metric="intensity">Інтенсивність</button>
+        </div>
+      </div>
+      <div class="table-scroll"><table id="heatmap" class="heatmap"></table></div>
+      <p class="muted">ISO-тижні (пн–нд); перший і останній тижні періоду можуть бути неповними.</p>
+    </section>
+
+    <!-- Інциденти -->
+    <section class="card" data-block="incidents">
+      <div class="card-head">
+        <h2>Інциденти <span id="inc-total" class="muted"></span></h2>
+        <label class="inline">На сторінці
+          <select id="page-size"><option>10</option><option selected>20</option><option>50</option></select>
+        </label>
+      </div>
+      <div class="table-scroll">
+        <table id="incidents" class="data">
+          <thead><tr>
+            <th data-sort="occurred_at">Час</th><th data-sort="sector">Сектор</th>
+            <th data-sort="direction">Напрямок</th><th data-sort="event_type">Тип</th>
+            <th data-sort="intensity" class="num">Інтенсивність</th><th data-field="source">Джерело</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button type="button" id="prev-page">← Назад</button>
+        <span id="page-info"></span>
+        <button type="button" id="next-page">Далі →</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Модальне вікно деталей -->
+  <dialog id="details">
+    <form method="dialog">
+      <h2>Деталі інциденту <span id="d-id"></span></h2>
+      <dl id="d-body"></dl>
+      <button class="primary">Закрити</button>
+    </form>
+  </dialog>
+
+  <footer class="foot">Панорама-ОВУ · PostgreSQL → FastAPI (sync) → Web (vanilla JS + Chart.js) · синтетичні навчальні дані</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

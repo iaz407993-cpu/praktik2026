@@ -1,0 +1,210 @@
+/* CSS-змінні відповідно до брендбуку ЗСУ */
+:root {
+    --color-primary: #005a34;       /* Темно-зелений */
+    --color-accent: #ffdd00;        /* Жовтий */
+    --color-background: #f7f9fa;    /* Фон */
+    --color-secondary-bg: #e6e8ea;  /* Заголовки */
+    --color-text: #333333;          /* Текст */
+    --color-light-bg: #ffffff;      /* Фон блоків */
+    --color-border: #d4d8db;        /* Рамки */
+    --color-placeholder: #f1f3f5;   /* Плейсхолдери */
+}
+
+/* Загальні налаштування */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+}
+
+/* Навігація */
+.navbar {
+    background-color: var(--color-primary);
+    color: var(--color-light-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.logo {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.nav-menu {
+    list-style: none;
+    display: flex;
+}
+
+.nav-menu li {
+    margin-left: 20px;
+}
+
+.nav-menu a {
+    color: var(--color-light-bg);
+    text-decoration: none;
+    font-size: 15px;
+}
+
+.nav-menu a:hover {
+    color: var(--color-accent);
+}
+
+/* Заголовок */
+.header {
+    
+    padding: 20px;
+    background-color: var(--color-secondary-bg);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.header h1 {
+    color: var(--color-primary);
+}
+
+/* Контейнер */
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+/* Контейнер для графічних блоків (Flexbox) */
+.flex-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* Блоки для графічних елементів */
+.graph-block {
+    flex: 1 1 calc(50% - 20px); /* За замовчуванням 2 блоки в рядок */
+    background-color: var(--color-light-bg);
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    min-width: 300px;
+}
+
+.graph-block h2 {
+    font-size: 16px;
+    color: var(--color-primary);
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.graph-placeholder {
+    width: 100%;
+    height: 200px;
+    background-color: var(--color-placeholder);
+    border-radius: 4px;
+}
+
+/* Футер */
+.footer {
+    background-color: var(--color-primary);
+    color: var(--color-light-bg);
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+/* Адаптивність для трьох рівнів екрану */
+
+/* Великі екрани (від 1200px) - 2 блоки в ряд (графіки потребують ширини) */
+@media screen and (min-width: 1200px) {
+    .graph-block {
+        flex: 1 1 calc(50% - 20px);
+    }
+}
+
+/* Середні екрани (від 600px до 1199px) - 2 блоки в ряд */
+@media screen and (max-width: 1199px) and (min-width: 600px) {
+    .graph-block {
+        flex: 1 1 calc(50% - 20px);
+    }
+}
+
+/* Мобільні пристрої (до 600px) - 1 блок у ряд */
+@media screen and (max-width: 599px) {
+    .graph-block {
+        flex: 1 1 100%;
+    }
+}
+
+/* ===== Доповнення практичної роботи 5.5 ===== */
+.subtitle { margin-top: 6px; font-size: 14px; color: #555; }
+
+.toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin-bottom: 16px; font-size: 14px;
+}
+.toolbar label { font-weight: bold; color: var(--color-primary); }
+.toolbar select, .table-block input {
+    padding: 6px 10px; border: 1px solid var(--color-border); border-radius: 4px;
+    font-size: 14px; background: var(--color-light-bg);
+}
+.hint { color: #777; font-size: 12px; }
+
+.kpi-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;
+}
+.info-box {
+    background: var(--color-light-bg); border: 2px solid var(--color-border);
+    border-left: 6px solid var(--color-primary); border-radius: 8px; padding: 12px 16px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+.info-box:nth-child(2) { border-left-color: var(--color-accent); }
+.kpi-title { font-size: 13px; color: #555; }
+.kpi-value { font-size: 30px; font-weight: bold; color: var(--color-primary); margin: 2px 0; }
+.kpi-sub { font-size: 12px; color: #777; }
+
+.data-type { text-align: center; font-size: 12px; color: #777; margin: -10px 0 10px; }
+.chart-box { position: relative; height: 260px; }
+.map-box { height: 260px; border-radius: 4px; z-index: 0; }
+.insight {
+    margin-top: 10px; font-size: 13px; padding: 8px 10px;
+    background: var(--color-placeholder); border-left: 3px solid var(--color-accent); border-radius: 4px;
+}
+
+.table-block {
+    margin-top: 20px; background: var(--color-light-bg); border: 2px solid var(--color-border);
+    border-radius: 8px; padding: 15px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+.table-block h2 { font-size: 16px; color: var(--color-primary); margin-bottom: 15px; text-align: center; }
+.table-block input { width: 100%; max-width: 360px; margin-bottom: 10px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+th { background: var(--color-secondary-bg); color: var(--color-primary); cursor: pointer; user-select: none; }
+th.sorted::after { content: " " attr(data-dir); font-size: 10px; }
+tbody tr:hover { background: #f0f5f1; }
+.empty { text-align: center; color: #777; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.rank { padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #fff; }
+.rank-private { background: #8a9a5b; }
+.rank-corporal { background: #556b2f; }
+.rank-sergeant { background: #005a34; }
+.rank-lieutenant { background: #c9a227; color: #222; }
+
+@media screen and (max-width: 899px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media screen and (max-width: 599px) {
+    .kpi-row { grid-template-columns: 1fr; }
+    .navbar { flex-direction: column; gap: 8px; }
+    .nav-menu li { margin-left: 10px; }
+    .graph-block { min-width: 0; }
+}
