@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Оперативний дашборд аналітика</title>
+
+  <!-- Шрифти (підтримка кирилиці) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Карта: Leaflet + OpenStreetMap -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32"><path d="M16 2 L29 9 V23 L16 30 L3 23 V9 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 16 H22 M16 10 V22" stroke="currentColor" stroke-width="2"/></svg>
+    </div>
+    <div>
+      <h1>Оперативний дашборд аналітика</h1>
+      <p class="subtitle">Умовні знаки APP-6 · Наказ №140 · Синтетичні дані</p>
+    </div>
+  </div>
+  <nav class="sections" aria-label="Розділи">
+    <a href="#secMap">Карта</a>
+    <a href="#secStrikes">Ураження</a>
+    <a href="#secLogistics">Логістика</a>
+    <a href="#secEvents">Події</a>
+  </nav>
+  <div class="topbar-right">
+    <span id="apiStatus" class="pill pill-wait"><span class="dot"></span><span class="pill-text">Підключення…</span></span>
+    <span id="clock" class="clock mono">--:--:--</span>
+    <button id="refreshBtn" class="btn" type="button" title="Оновити дані">⟳ Оновити</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ВИБІРКА: фільтри застосовуються до всіх даних із датою (ураження, втрати, події) -->
+  <section class="card filterbar" aria-label="Вибірка даних">
+    <div class="fb-group">
+      <span class="fb-label">Період</span>
+      <div class="seg" id="presets" role="group" aria-label="Швидкий вибір періоду">
+        <button type="button" data-days="7">7 дн</button>
+        <button type="button" data-days="30">30 дн</button>
+        <button type="button" data-days="90">90 дн</button>
+        <button type="button" data-days="180">180 дн</button>
+        <button type="button" data-days="all">Увесь</button>
+      </div>
+      <label class="date-field"><span>з</span><input type="date" id="dateFrom" required></label>
+      <label class="date-field"><span>по</span><input type="date" id="dateTo" required></label>
+    </div>
+
+    <div class="fb-group">
+      <span class="fb-label">Вид ураження</span>
+      <details class="dd" id="ddStrike">
+        <summary><span class="dd-sum">Усі види</span></summary>
+        <div class="dd-panel">
+          <div class="dd-actions">
+            <button type="button" class="link" data-act="all">Усі</button>
+            <button type="button" class="link" data-act="none">Жодного</button>
+          </div>
+          <div class="dd-list"></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="fb-group">
+      <span class="fb-label">Постачання</span>
+      <details class="dd" id="ddSupply">
+        <summary><span class="dd-sum">Усі види</span></summary>
+        <div class="dd-panel">
+          <div class="dd-actions">
+            <button type="button" class="link" data-act="all">Усі</button>
+            <button type="button" class="link" data-act="none">Жодного</button>
+          </div>
+          <div class="dd-list"></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="fb-group">
+      <span class="fb-label">Область</span>
+      <select id="fRegion" aria-label="Область для вибірки"><option value="">Усі області</option></select>
+    </div>
+
+    <div class="fb-group fb-right">
+      <button type="button" class="btn btn-ghost" id="resetFilters">Скинути</button>
+    </div>
+
+    <p class="fb-summary muted" id="fbSummary">—</p>
+  </section>
+
+  <!-- KPI -->
+  <section class="kpis" aria-label="Ключові показники">
+    <article class="kpi"><span class="kpi-label">Підрозділів на карті</span><span class="kpi-value mono" id="kpiUnits">—</span></article>
+    <article class="kpi kpi-f"><span class="kpi-label">Свої</span><span class="kpi-value mono" id="kpiFriendly">—</span></article>
+    <article class="kpi kpi-h"><span class="kpi-label">Противник</span><span class="kpi-value mono" id="kpiHostile">—</span></article>
+    <article class="kpi"><span class="kpi-label">Особовий склад (свої)</span><span class="kpi-value mono" id="kpiPersonnel">—</span></article>
+    <article class="kpi"><span class="kpi-label">Сер. боєготовність</span><span class="kpi-value mono" id="kpiReadiness">—</span></article>
+    <article class="kpi"><span class="kpi-label">Події за 7 днів</span><span class="kpi-value mono" id="kpiEvents">—</span><span class="kpi-delta" id="kpiEventsDelta"></span></article>
+  </section>
+
+  <!-- Карта + бічна панель -->
+  <section class="main-grid anchor" id="secMap">
+    <div class="card map-card">
+      <div class="card-head">
+        <h2>Карта України — оперативна обстановка</h2>
+        <div class="filters">
+          <div class="chips" role="group" aria-label="Приналежність">
+            <label class="chip chip-f"><input type="checkbox" value="F" checked> Свої</label>
+            <label class="chip chip-h"><input type="checkbox" value="H" checked> Противник</label>
+          </div>
+          <select id="typeFilter" aria-label="Тип підрозділу"><option value="">Усі типи</option></select>
+          <select id="regionFilter" aria-label="Область"><option value="">Уся Україна</option></select>
+          <label class="toggle"><input type="checkbox" id="eventsToggle"> Події</label>
+          <label class="toggle"><input type="checkbox" id="strikesToggle"> Ураження</label>
+          <label class="toggle"><input type="checkbox" id="logisticsToggle"> Логістика</label>
+          <label class="toggle toggle-front"><input type="checkbox" id="frontToggle" checked> Лінія розмежування</label>
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <div class="card-head"><h2>Обраний підрозділ</h2></div>
+        <div id="unitDetail" class="unit-detail empty">Натисніть на умовний знак на карті або в списку.</div>
+      </div>
+
+      <div class="card list-card">
+        <div class="card-head">
+          <h2>Підрозділи <span class="muted" id="unitCount"></span></h2>
+        </div>
+        <input id="unitSearch" class="search" type="search" placeholder="Пошук за назвою…">
+        <ul id="unitList" class="unit-list"></ul>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Легенда</h2></div>
+        <p class="legend-std muted" id="legendStd"></p>
+        <ul id="legend" class="legend"></ul>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ВОГНЕВЕ УРАЖЕННЯ ТА ВТРАТИ ПРОТИВНИКА -->
+  <h2 class="section-title anchor" id="secStrikes">Вогневе ураження та втрати противника <span class="muted" id="strikesPeriod"></span></h2>
+
+  <section class="kpis" aria-label="Підсумки вогневого ураження">
+    <article class="kpi"><span class="kpi-label">Вогневих уражень</span><span class="kpi-value mono" id="kStrikes">—</span><span class="kpi-delta" id="kStrikesD"></span></article>
+    <article class="kpi"><span class="kpi-label">Результативність</span><span class="kpi-value mono" id="kRate">—</span><span class="kpi-delta" id="kRateD"></span></article>
+    <article class="kpi kpi-h"><span class="kpi-label">Ліквідовано о/с</span><span class="kpi-value mono" id="kKia">—</span><span class="kpi-delta" id="kKiaD"></span></article>
+    <article class="kpi kpi-h"><span class="kpi-label">Поранено о/с</span><span class="kpi-value mono" id="kWia">—</span><span class="kpi-delta" id="kWiaD"></span></article>
+    <article class="kpi kpi-h"><span class="kpi-label">Знищено техніки</span><span class="kpi-value mono" id="kEq">—</span><span class="kpi-delta" id="kEqD"></span></article>
+    <article class="kpi kpi-h"><span class="kpi-label">з них танків і ББМ</span><span class="kpi-value mono" id="kArmor">—</span><span class="kpi-delta" id="kArmorD"></span></article>
+  </section>
+
+  <section class="charts" id="strikeCharts">
+    <div class="card span-2">
+      <div class="card-head"><h2>Вогневі ураження</h2><span class="muted bucket-note"></span></div>
+      <div class="chart-box"><canvas id="cStrikesTime"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Знищено техніки за категоріями</h2></div>
+      <div class="chart-box"><canvas id="cEquip"></canvas></div>
+    </div>
+    <div class="card span-2">
+      <div class="card-head"><h2>Втрати особового складу противника</h2><span class="muted bucket-note"></span></div>
+      <div class="chart-box"><canvas id="cPersonnel"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Ураження за видом</h2></div>
+      <div class="chart-box"><canvas id="cByType"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Ураження за областями</h2></div>
+      <div class="chart-box tall"><canvas id="cRegStrikes"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Ліквідовано о/с за областями</h2></div>
+      <div class="chart-box tall"><canvas id="cRegKia"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Знищено техніки за областями</h2></div>
+      <div class="chart-box tall"><canvas id="cRegEq"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Результативність за видами ураження</h2>
+      <span class="muted">інтенсивність фону — частка від максимуму в колонці</span>
+    </div>
+    <div class="table-wrap">
+      <table class="table matrix">
+        <thead id="matrixHead"></thead>
+        <tbody id="matrixBody"><tr><td class="muted">Завантаження…</td></tr></tbody>
+        <tfoot id="matrixFoot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Журнал вогневих уражень</h2>
+      <div class="head-right"><span class="muted" id="strikesCount"></span><a class="btn btn-sm" id="csvStrikes" href="#" download>⬇ CSV</a></div>
+    </div>
+    <div class="table-wrap scroll-y">
+      <table class="table">
+        <thead><tr><th>Час</th><th>Вид ураження</th><th>Область</th><th>Ціль</th><th>Результат</th><th class="num">Ліквід.</th><th class="num">Поран.</th><th>Техніка</th></tr></thead>
+        <tbody id="strikesTable"><tr><td colspan="8" class="muted">Завантаження…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ЛОГІСТИКА -->
+  <h2 class="section-title anchor" id="secLogistics">Логістика та забезпечення <span class="muted" id="logPeriod"></span></h2>
+
+  <section class="kpis" aria-label="Підсумки логістики">
+    <article class="kpi kpi-f"><span class="kpi-label">Рейсів</span><span class="kpi-value mono" id="lDeliv">—</span><span class="kpi-delta" id="lDelivD"></span></article>
+    <article class="kpi kpi-f"><span class="kpi-label">Доставлено, т</span><span class="kpi-value mono" id="lTons">—</span><span class="kpi-delta" id="lTonsD"></span></article>
+    <article class="kpi kpi-f"><span class="kpi-label">Виконання плану</span><span class="kpi-value mono" id="lPlan">—</span><span class="kpi-delta" id="lPlanD"></span></article>
+    <article class="kpi kpi-f"><span class="kpi-label">Забезпеченість потреби</span><span class="kpi-value mono" id="lCov">—</span><span class="kpi-delta" id="lCovD"></span></article>
+    <article class="kpi kpi-f"><span class="kpi-label">Вчасно</span><span class="kpi-value mono" id="lOnTime">—</span><span class="kpi-delta" id="lOnTimeD"></span></article>
+    <article class="kpi kpi-f"><span class="kpi-label">Втрачено рейсів</span><span class="kpi-value mono" id="lLost">—</span><span class="kpi-delta" id="lLostD"></span></article>
+  </section>
+
+  <section class="charts">
+    <div class="card span-2">
+      <div class="card-head"><h2>Обсяги постачання, т: план і факт</h2><span class="muted bucket-note"></span></div>
+      <div class="chart-box"><canvas id="cLogTime"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Статуси рейсів</h2></div>
+      <div class="chart-box"><canvas id="cLogStatus"></canvas></div>
+    </div>
+    <div class="card span-2">
+      <div class="card-head"><h2>Потреба за нормами і доставлено за видами, т</h2></div>
+      <div class="chart-box"><canvas id="cLogNeed"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Забезпеченість за видами</h2>
+        <span class="status-key"><i class="st-ok"></i>≥ 90% <i class="st-warn"></i>75–90% <i class="st-crit"></i>&lt; 75%</span></div>
+      <div class="chart-box"><canvas id="cLogType"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Звіт по складах</h2></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Склад</th><th>Тип</th><th>Область</th><th class="num">Рейсів</th><th class="num">Доставлено, т</th><th class="num">Сер. відстань, км</th><th class="num">Сер. час у дорозі, год</th><th class="num">Запізнень</th><th class="num">Втрачено</th><th class="num">У дорозі</th></tr></thead>
+        <tbody id="depotTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Забезпеченість підрозділів (від найнижчої)</h2>
+      <span class="muted">доставлено ÷ потреба за нормами за період, %</span>
+    </div>
+    <div class="table-wrap scroll-y">
+      <table class="table matrix">
+        <thead id="covHead"></thead>
+        <tbody id="covBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Журнал рейсів</h2>
+      <div class="head-right"><span class="muted" id="delivCount"></span><a class="btn btn-sm" id="csvLogistics" href="#" download>⬇ CSV</a></div>
+    </div>
+    <div class="table-wrap scroll-y">
+      <table class="table">
+        <thead><tr><th>Відправлено</th><th>Статус</th><th>Постачання</th><th>Склад</th><th>Підрозділ</th><th>Область</th><th class="num">План, т</th><th class="num">Доставлено, т</th><th class="num">Км</th><th>Прибуло</th></tr></thead>
+        <tbody id="delivTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ПОДІЇ -->
+  <h2 class="section-title anchor" id="secEvents">Події та підрозділи</h2>
+
+  <!-- Графіки -->
+  <section class="charts">
+    <div class="card span-2">
+      <div class="card-head"><h2>Динаміка подій</h2><span class="muted" id="timelineRange"></span></div>
+      <div class="chart-box"><canvas id="chartTimeline"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Боєготовність своїх підрозділів</h2></div>
+      <div class="chart-box"><canvas id="chartReadiness"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Підрозділи за типом</h2></div>
+      <div class="chart-box tall"><canvas id="chartTypes"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Події за областями</h2></div>
+      <div class="chart-box tall"><canvas id="chartRegions"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Події за типом</h2></div>
+      <div class="chart-box tall"><canvas id="chartEventTypes"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Таблиця -->
+  <section class="card">
+    <div class="card-head"><h2>Останні події</h2><span class="muted" id="eventsCount"></span></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Час</th><th>Тип</th><th>Область</th><th>Рівень</th><th>Опис</th></tr></thead>
+        <tbody id="eventsTable"><tr><td colspan="5" class="muted">Завантаження…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot muted">Усі дані синтетичні та вигадані. Postgres → FastAPI → HTML/CSS/JS.</footer>
+</main>
+
+<!-- Бібліотеки -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/milsymbol@2.2.0/dist/milsymbol.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script src="js/app.js"></script>
+</body>
+</html>
